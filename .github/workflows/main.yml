@@ -1,0 +1,64 @@
+name: Build Waterfox Official Stock
+
+on:
+  push:
+    branches: [ "current", "master", "main" ]
+  workflow_dispatch: # Cho phép nhấn nút chạy thủ công trong tab Actions
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            python3-dev \
+            libgtk-3-dev \
+            libpulse-dev \
+            libdbus-glib-1-dev \
+            libxt-dev \
+            xvfb \
+            yasm \
+            unzip \
+            uuid-dev \
+            libasound2-dev \
+            libiw-dev \
+            mesa-common-dev \
+            cbindgen \
+            clang \
+            lld
+
+      - name: Setup Rust Environment
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Run Mozilla Bootstrap (Desktop Mode)
+        run: |
+          # Gọi tập lệnh mach tự động tải bộ công cụ biên dịch Mozilla
+          python3 ./mach bootstrap --no-interactive --application-choice="browser"
+
+      - name: Use Included Mozconfig
+        run: |
+          # KHÔNG tự ghi đè, giữ nguyên 100% cấu hình gốc đi kèm của Waterfox
+          echo "Sử dụng file .mozconfig mặc định đi kèm trong source code."
+          cat .mozconfig
+
+      - name: Compile Waterfox
+        run: |
+          ./mach build
+
+      - name: Package Application
+        run: |
+          ./mach package
+
+      - name: Upload Build Artifacts
+        uses: actions/artifacts@v4
+        with:
+          name: waterfox-official-linux-build
+          path: obj-linux-x86_64/dist/*.tar.bz2
