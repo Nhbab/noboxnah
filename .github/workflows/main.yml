@@ -57,8 +57,9 @@ jobs:
         run: |
           ./mach package
 
+      # ĐÃ SỬA: Đổi từ actions/artifacts sang actions/upload-artifact
       - name: Upload Build Artifacts
-        uses: actions/artifacts@v4
+        uses: actions/upload-artifact@v4
         with:
-          name: waterfox-official-linux-build
+          name: waterfox-fast-linux-build
           path: obj-linux-x86_64/dist/*.tar.bz2
