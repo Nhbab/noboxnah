@@ -36,10 +36,7 @@ jobs:
         shell: cmd
         run: |
           # Xóa bỏ các biến ràng buộc hệ thống của GitHub Actions
-          set PIP_REQUIRE_VIRTUALENV=
-          
-          # Đẩy chuỗi tự động "yes" vào shell của MozillaBuild để chạy lệnh bootstrap của bạn
-          ./mach bootstrap 
+ 
 
       # BIÊN DỊCH GỐC: Hệ thống sẽ tự động dùng file cấu hình mặc định trong source code Waterfox
       - name: Compile Waterfox Stock
