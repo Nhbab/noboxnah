@@ -25,8 +25,7 @@ jobs:
       - name: Compile Waterfox Stock (Direct Host Call)
         shell: cmd
         run: |
-          # Executes using stock repository assets without editing any .mozconfig or toolchain files
-          python3 mach build
+          .\mach build
 
       - name: Package Application
         shell: cmd
