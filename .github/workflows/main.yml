@@ -12,12 +12,12 @@ jobs:
     env:
       MOZ_AUTOMATION: "1"
       MOZILLABUILD_DIR: "C:\\mozilla-build"
+      # Modernized Python flags to replace the deprecated MACH_USE_SYSTEM_PYTHON
       MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: "system"
       TASK_ID: "0"
       MOZ_DISABLE_TASKGRAPH: "1"
       TASKCLUSTER_ROOT_URL: "https://mozilla.com"
 
-    # Force all steps in this job to run natively inside PowerShell by default
     defaults:
       run:
         shell: powershell
@@ -51,17 +51,20 @@ jobs:
           toolchain: stable
           target: x86_64-pc-windows-msvc
 
+      - name: Append Bootstrap Override to Mozconfig
+        run: |
+          # PowerShell Appends the override safely using standard text stream rules
+          # This guarantees the build engine skips the broken toolchain network lookup
+          Add-Content -Path .mozconfig -Value "`nac_add_options --enable-bootstrap=no-update"
+          Write-Output "--- Verified Updated Mozconfig ---"
+          Get-Content .mozconfig
+
       - name: Compile Waterfox Stock (Direct PowerShell Call)
         run: |
-          # Inject the bootstrap override parameter dynamically to the process memory
-          $env:MOZ_CONFIGURE_OPTIONS = "--enable-bootstrap=no-update"
-          
-          # Call mach directly using PowerShell syntax
           .\mach build
 
       - name: Package Application
         run: |
-          $env:MOZ_CONFIGURE_OPTIONS = "--enable-bootstrap=no-update"
           .\mach package
 
       - name: Upload Build Artifacts
