@@ -1,13 +1,16 @@
-name: Build Waterfox Official Stock
+name: Build Waterfox Official Stock (Pure Linux Default)
 
 on:
   push:
     branches: [ "current", "master", "main" ]
-  workflow_dispatch: # Cho phép nhấn nút chạy thủ công trong tab Actions
+  workflow_dispatch: 
 
 jobs:
   build-linux:
     runs-on: ubuntu-22.04
+    env:
+      MOZ_AUTOMATION: "1"
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -38,22 +41,23 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Run Mozilla Bootstrap (Desktop Mode)
+      - name: Run Mozilla Bootstrap (Automation Fixed)
         run: |
-          # Gọi tập lệnh mach tự động tải bộ công cụ biên dịch Mozilla
-          ./mach bootstrap 
+          # 1. We move --no-interactive BEFORE the bootstrap instruction.
+          # 2. We pipe "yes" into the command line to auto-answer fallback prompts.
+          yes | python3 ./mach --no-interactive bootstrap --application-choice="browser"
 
-      - name: Compile Waterfox
+      - name: Compile Waterfox Stock
         run: |
+          # Uses Waterfox's built-in platform config out of the box
           ./mach build
 
       - name: Package Application
         run: |
           ./mach package
 
-      # ĐÃ SỬA: Đổi từ actions/artifacts sang actions/upload-artifact
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: waterfox-fast-linux-build
-          path: obj-linux-x86_64/dist/*.tar.bz2
+          name: waterfox-stock-linux-build
+          path: obj-*/dist/*.tar.bz2
