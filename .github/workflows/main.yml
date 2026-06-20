@@ -12,11 +12,10 @@ jobs:
     env:
       MOZILLABUILD_DIR: "C:\\mozilla-build"
       MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: "system"
-      # We decouple MOZ_AUTOMATION to prevent the taskgraph from forcing a Taskcluster decision check
       TASK_ID: "0"
       MOZ_DISABLE_TASKGRAPH: "1"
+      TASKCLUSTER_ROOT_URL: "https://mozilla.com"
 
- 
     defaults:
       run:
         shell: powershell
@@ -25,17 +24,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install MozillaBuild via Chocolatey
+      - name: Install MozillaBuild and NASM via Chocolatey
         run: |
-          choco install mozillabuild -y --no-progress
+          # Quietly installs MozillaBuild tools and the missing NASM hardware assembler
+          choco install mozillabuild nasm -y --no-progress
 
-      - name: Inject MozillaBuild Paths Directly to Host
+      - name: Inject System Paths Directly to Host
         run: |
+          # Adds MozillaBuild tool vectors and NASM location straight to your active system path
           $mozPaths = @(
               "C:\mozilla-build",
               "C:\mozilla-build\msys2\usr\bin",
               "C:\mozilla-build\python3",
-              "C:\mozilla-build\python3\Scripts"
+              "C:\mozilla-build\python3\Scripts",
+              "C:\Program Files\NASM"
           )
           foreach ($path in $mozPaths) {
               if (Test-Path $path) {
@@ -52,11 +54,10 @@ jobs:
 
       - name: Compile Waterfox Stock (Direct PowerShell Call)
         run: |
-          # Explicitly trick the build system into knowing it doesn't need to download clang
+          # Injects the bootstrap override block into runtime process memory
           $env:MOZ_CONFIGURE_OPTIONS = "--enable-bootstrap=no-update"
           $env:MOZ_BOOTSTRAP_LATEST = "1"
           
-          # Force python/mach to assume a local developer environment so it compiles instead of looking for CI artifacts
           .\mach build
 
       - name: Package Application
