@@ -41,7 +41,7 @@ jobs:
       - name: Run Mozilla Bootstrap (Desktop Mode)
         run: |
           # Gọi tập lệnh mach tự động tải bộ công cụ biên dịch Mozilla
-          python3 ./mach bootstrap --no-interactive --application-choice="browser"
+          python3 ./mach bootstrap --application-choice="browser"
 
       - name: Use Included Mozconfig
         run: |
