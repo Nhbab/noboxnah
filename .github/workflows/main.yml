@@ -1,15 +1,17 @@
-name: Build Waterfox Official Stock (Pure Linux Default)
+name: Build Waterfox Official Stock
 
 on:
   push:
     branches: [ "current", "master", "main" ]
-  workflow_dispatch: 
+  workflow_dispatch: # Cho phép nhấn nút chạy thủ công trong tab Actions
 
 jobs:
   build-linux:
     runs-on: ubuntu-22.04
+    
     env:
       MOZ_AUTOMATION: "1"
+      MACH_USE_SYSTEM_PYTHON: "1"
 
     steps:
       - name: Checkout Repository
@@ -21,6 +23,8 @@ jobs:
           sudo apt-get install -y \
             build-essential \
             python3-dev \
+            python3-pip \
+            python3-venv \
             libgtk-3-dev \
             libpulse-dev \
             libdbus-glib-1-dev \
@@ -41,15 +45,22 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Run Mozilla Bootstrap (Automation Fixed)
+      - name: Run Mozilla Bootstrap (Fixed Isolation Mode)
         run: |
-          # 1. We move --no-interactive BEFORE the bootstrap instruction.
-          # 2. We pipe "yes" into the command line to auto-answer fallback prompts.
-          yes | python3 ./mach --no-interactive bootstrap --application-choice="browser"
+          # Xóa các cờ ràng buộc của hệ thống GitHub để tránh lỗi venv assertion
+          export PIP_REQUIRE_VIRTUALENV=""
+          
+          # Khởi tạo một môi trường Python ảo cô lập hoàn toàn cho mach hoạt động
+          python3 -m venv target_env
+          source target_env/bin/activate
+          
+          # Chạy chính xác câu lệnh bootstrap của bạn bằng luồng tự động trả lời yes
+          yes | ./mach bootstrap --application-choice=browser
 
       - name: Compile Waterfox Stock
         run: |
-          # Uses Waterfox's built-in platform config out of the box
+          # Không đụng vào cấu hình .mozconfig tự tạo
+          # Hệ thống tự động nhận diện file cấu hình gốc đi kèm của Waterfox
           ./mach build
 
       - name: Package Application
