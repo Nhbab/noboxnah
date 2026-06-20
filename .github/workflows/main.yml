@@ -10,11 +10,13 @@ jobs:
     runs-on: windows-2022
     
     env:
+      # Tells the build engine to run headlessly but drops Taskcluster environment parameters
+      MOZ_AUTOMATION: "0"
       MOZILLABUILD_DIR: "C:\\mozilla-build"
       MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: "system"
-      TASK_ID: "0"
-      MOZ_DISABLE_TASKGRAPH: "1"
-      TASKCLUSTER_ROOT_URL: "https://mozilla.com"
+      
+      # FORCE BYPASS INTERNAL TASKGRAPH PIPELINE ENGINE
+      MOZ_BUILD_NOTASKGRAPH: "1"
 
     defaults:
       run:
@@ -26,12 +28,10 @@ jobs:
 
       - name: Install MozillaBuild and NASM via Chocolatey
         run: |
-          # Quietly installs MozillaBuild tools and the missing NASM hardware assembler
           choco install mozillabuild nasm -y --no-progress
 
       - name: Inject System Paths Directly to Host
         run: |
-          # Adds MozillaBuild tool vectors and NASM location straight to your active system path
           $mozPaths = @(
               "C:\mozilla-build",
               "C:\mozilla-build\msys2\usr\bin",
@@ -54,7 +54,7 @@ jobs:
 
       - name: Compile Waterfox Stock (Direct PowerShell Call)
         run: |
-          # Injects the bootstrap override block into runtime process memory
+          # Overrides internal update checks using process memory variables
           $env:MOZ_CONFIGURE_OPTIONS = "--enable-bootstrap=no-update"
           $env:MOZ_BOOTSTRAP_LATEST = "1"
           
