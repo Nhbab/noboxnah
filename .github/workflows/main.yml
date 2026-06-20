@@ -1,75 +1,30 @@
-name: Build Waterfox Official Stock (Pure Windows PowerShell)
-
+name: Build Waterfox Remote
 on:
-  push:
-    branches: [ "current", "master", "main" ]
-  workflow_dispatch: 
+  workflow_dispatch: # Cho phép bạn kích hoạt thủ công từ iPhone
 
 jobs:
-  build-windows:
-    runs-on: windows-2022
-    
-    env:
-      # Tells the build engine to run headlessly but drops Taskcluster environment parameters
-      MOZ_AUTOMATION: "0"
-      MOZILLABUILD_DIR: "C:\\mozilla-build"
-      MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: "system"
-      
-      # FORCE BYPASS INTERNAL TASKGRAPH PIPELINE ENGINE
-      MOZ_BUILD_NOTASKGRAPH: "1"
-
-    defaults:
-      run:
-        shell: powershell
-
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Install MozillaBuild and NASM via Chocolatey
-        run: |
-          choco install mozillabuild nasm -y --no-progress
-
-      - name: Inject System Paths Directly to Host
-        run: |
-          $mozPaths = @(
-              "C:\mozilla-build",
-              "C:\mozilla-build\msys2\usr\bin",
-              "C:\mozilla-build\python3",
-              "C:\mozilla-build\python3\Scripts",
-              "C:\Program Files\NASM"
-          )
-          foreach ($path in $mozPaths) {
-              if (Test-Path $path) {
-                  Write-Output "Adding to PATH: $path"
-                  echo "$path" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-              }
-          }
-
-      - name: Setup Rust Environment
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Python and Build Tools
+        uses: actions/setup-python@v5
         with:
-          toolchain: stable
-          target: x86_64-pc-windows-msvc
+          python-version: '3.11'
 
-      - name: Compile Waterfox Stock (Direct PowerShell Call)
+      - name: Run Waterfox Bootstrap
         run: |
-          # Overrides internal update checks using process memory variables
-          $env:MOZ_CONFIGURE_OPTIONS = "--enable-bootstrap=no-update"
-          $env:MOZ_BOOTSTRAP_LATEST = "1"
-          
-          .\mach build
+          # Chạy script cấu hình môi trường của hệ thống Firefox/Waterfox
+          ./mach bootstrap --application-choice=browser 
 
-      - name: Package Application
+      - name: Compile Waterfox
         run: |
-          $env:MOZ_CONFIGURE_OPTIONS = "--enable-bootstrap=no-update"
-          $env:MOZ_BOOTSTRAP_LATEST = "1"
-          .\mach package
+          ./mach build
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: waterfox-stock-windows-build
-          path: |
-            obj-*/dist/*.zip
-            obj-*/dist/*.exe
+          name: waterfox-binaries
+          path: objdir-*/dist/
