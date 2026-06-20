@@ -1,53 +1,42 @@
-name: Build Waterfox Official Stock (Windows Choco)
+name: Build Waterfox Official Stock (Pure Windows Native)
 
 on:
   push:
     branches: [ "current", "master", "main" ]
-  workflow_dispatch: # Cho phép nhấn nút chạy thủ công trong tab Actions
+  workflow_dispatch: 
 
 jobs:
   build-windows:
-    # Sử dụng máy ảo Windows Server của GitHub (Khuyến khích dùng Large Runner nếu bị tràn RAM)
     runs-on: windows-2022
     
     env:
+      # Native automation environments that govern Gecko-based code compilation
       MOZ_AUTOMATION: "1"
       MACH_USE_SYSTEM_PYTHON: "1"
-      MOZILLABUILD_DIR: "C:\\mozilla-build"
+      
+      # Bypasses Taskcluster tracking validations natively without rewriting file parameters
+      TASK_ID: "0"
+      MOZ_DISABLE_TASKGRAPH: "1"
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install MozillaBuild via Chocolatey
-        run: |
-          # Tự động tải và cài đặt bộ công cụ MozillaBuild mà không làm hiện thông tin rác
-          choco install mozillabuild -y --no-progress
-
-      - name: Setup Rust Environment
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          # Khởi tạo target MSVC để tương thích với trình biên dịch trên Windows
-          target: x86_64-pc-windows-msvc
-
-
-      # BIÊN DỊCH GỐC: Hệ thống sẽ tự động dùng file cấu hình mặc định trong source code Waterfox
-      - name: Compile Waterfox Stock
+      - name: Compile Waterfox Stock (Direct Host Call)
         shell: cmd
         run: |
-          ./mach build
+          # Executes using stock repository assets without editing any .mozconfig or toolchain files
+          python3 mach build
 
       - name: Package Application
         shell: cmd
         run: |
-          ./mach package
+          python3 mach package
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: waterfox-stock-windows-build
-          # File đầu ra trên Windows nằm trong thư mục obj-*/dist dưới dạng bộ cài .exe hoặc file nén di động .zip
           path: |
             obj-*/dist/*.zip
             obj-*/dist/*.exe
