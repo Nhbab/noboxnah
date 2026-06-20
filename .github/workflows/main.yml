@@ -31,12 +31,6 @@ jobs:
           # Khởi tạo target MSVC để tương thích với trình biên dịch trên Windows
           target: x86_64-pc-windows-msvc
 
-      # SỬA LỖI TRỰC TIẾP: Chạy lệnh bootstrap chính xác của bạn bên trong MSYS2/MozillaBuild
-      - name: Run Mozilla Bootstrap (Windows Isolation Mode)
-        shell: cmd
-        run: |
-          # Xóa bỏ các biến ràng buộc hệ thống của GitHub Actions
- 
 
       # BIÊN DỊCH GỐC: Hệ thống sẽ tự động dùng file cấu hình mặc định trong source code Waterfox
       - name: Compile Waterfox Stock
