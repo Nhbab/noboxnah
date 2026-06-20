@@ -10,11 +10,12 @@ jobs:
     runs-on: windows-2022
     
     env:
-      # Native automation environments that govern Gecko-based code compilation
+      # Native automation flags that tell the Gecko core engine to skip interactive interfaces
       MOZ_AUTOMATION: "1"
       MACH_USE_SYSTEM_PYTHON: "1"
+      MOZILLABUILD_DIR: "C:\\mozilla-build"
       
-      # Bypasses Taskcluster tracking validations natively without rewriting file parameters
+      # Intercepts and satisfies internal tracking checks without editing .mozconfig
       TASK_ID: "0"
       MOZ_DISABLE_TASKGRAPH: "1"
 
@@ -22,15 +23,45 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Install MozillaBuild via Chocolatey
+        run: |
+          # Quietly provisions the necessary Windows build environment tools to C:\mozilla-build
+          choco install mozillabuild -y --no-progress
+
+      - name: Inject MozillaBuild Paths Directly to Host
+        shell: powershell
+        run: |
+          # Extracts inner tool directories and binds them to the runner's global environment
+          $mozPaths = @(
+              "C:\mozilla-build",
+              "C:\mozilla-build\msys2\usr\bin",
+              "C:\mozilla-build\python3",
+              "C:\mozilla-build\python3\Scripts"
+          )
+          foreach ($path in $mozPaths) {
+              if (Test-Path $path) {
+                  echo "Adding to PATH: $path"
+                  echo "$path" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              }
+          }
+
+      - name: Setup Rust Environment
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+
       - name: Compile Waterfox Stock (Direct Host Call)
         shell: cmd
         run: |
-          .\mach build
+          # Calls the shell automation directly using host variables
+          # This will use the stock repository config files without any injections
+          mach build
 
       - name: Package Application
         shell: cmd
         run: |
-          python3 mach package
+          mach package
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
