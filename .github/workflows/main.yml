@@ -39,18 +39,18 @@ jobs:
           set PIP_REQUIRE_VIRTUALENV=
           
           # Đẩy chuỗi tự động "yes" vào shell của MozillaBuild để chạy lệnh bootstrap của bạn
-          echo yes | call "%MOZILLABUILD_DIR%\start-shell.bat" -c "./mach bootstrap --application-choice=browser"
+          ./mach bootstrap 
 
       # BIÊN DỊCH GỐC: Hệ thống sẽ tự động dùng file cấu hình mặc định trong source code Waterfox
       - name: Compile Waterfox Stock
         shell: cmd
         run: |
-          call "%MOZILLABUILD_DIR%\start-shell.bat" -c "./mach build"
+          ./mach build
 
       - name: Package Application
         shell: cmd
         run: |
-          call "%MOZILLABUILD_DIR%\start-shell.bat" -c "./mach package"
+          ./mach package
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
